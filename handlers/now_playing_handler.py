@@ -90,7 +90,7 @@ def get_human_timestamp_from_timedelta(timedelta: datetime.timedelta):
     return f"{f'{hours}:' if hours else ''}{minutes:02}:{seconds:02}"
 
 
-async def get_current_song(session):
+async def get_media_session_data(session):
     song_properties = await session.try_get_media_properties_async()
     title = song_properties.title
     artist = song_properties.artist
