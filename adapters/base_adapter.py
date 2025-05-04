@@ -15,5 +15,5 @@ class BaseAdapter:
         self._config.save_section(self.adapter_name, data)
 
     @abstractmethod
-    async def get_current_song(self, session) -> tuple[str, list, Optional[BytesIO]]:
+    async def get_current_song(self) -> tuple[str, list, Optional[BytesIO]]:
         pass
