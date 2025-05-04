@@ -38,7 +38,7 @@ class GUID(Structure):
         ("Data1", wintypes.DWORD),
         ("Data2", wintypes.WORD),
         ("Data3", wintypes.WORD),
-        ("Data4", wintypes.BYTE * 8)
+        ("Data4", wintypes.BYTE * 8),
     ]
 
     @classmethod
@@ -52,17 +52,33 @@ class GUID(Structure):
         return cls(int(parts[0], 16), int(parts[1], 16), int(parts[2], 16), data4)
 
 
-SetPersistedFunc = ctypes.WINFUNCTYPE(ctypes.c_long, ctypes.c_void_p, ctypes.c_uint, ctypes.c_int, ctypes.c_int,
-                                              ctypes.c_void_p)
-GetPersistedFunc = ctypes.WINFUNCTYPE(ctypes.c_long, ctypes.c_void_p, ctypes.c_uint, ctypes.c_int, ctypes.c_int,
-                                              ctypes.POINTER(ctypes.c_void_p))
+SetPersistedFunc = ctypes.WINFUNCTYPE(
+    ctypes.c_long,
+    ctypes.c_void_p,
+    ctypes.c_uint,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_void_p,
+)
+GetPersistedFunc = ctypes.WINFUNCTYPE(
+    ctypes.c_long,
+    ctypes.c_void_p,
+    ctypes.c_uint,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.POINTER(ctypes.c_void_p),
+)
 ClearAllFunc = ctypes.WINFUNCTYPE(ctypes.c_long, ctypes.c_void_p)
 
 
 # Define constants
 AUDIO_CLASS_NAME = "Windows.Media.Internal.AudioPolicyConfig"
 WIN_VERSION = ".".join(str(s) for s in sys.getwindowsversion()[:3])
-AUDIO_POLICY_CONFIG = "{ab3d4648-e242-459f-b02f-541c70306324}" if WIN_VERSION >= "10.0.21390" else "{2a59116d-6c4f-45e0-a74f-707e3fef9258}"
+AUDIO_POLICY_CONFIG = (
+    "{ab3d4648-e242-459f-b02f-541c70306324}"
+    if WIN_VERSION >= "10.0.21390"
+    else "{2a59116d-6c4f-45e0-a74f-707e3fef9258}"
+)
 AUDIO_POLICY_CONFIG_GUID = GUID.from_string(AUDIO_POLICY_CONFIG)
 LISTEN_SETTING_GUID = "{24DBB0FC-9311-4B3D-9CF0-18FF155639D4}"
 CHECKBOX_PID = 1
@@ -73,8 +89,7 @@ def get_stripped_id(long_id: str) -> str:
     return long_id and long_id[17:-39]
 
 
-
-def set_listening_checkbox(property_store, value:bool):
+def set_listening_checkbox(property_store, value: bool):
     checkbox_pk = PROPERTYKEY()
     checkbox_pk.fmtid = _GUID(LISTEN_SETTING_GUID)
     checkbox_pk.pid = CHECKBOX_PID
@@ -82,7 +97,6 @@ def set_listening_checkbox(property_store, value:bool):
     new_value = PROPVARIANT(VT_BOOL)
     new_value.union.boolVal = value
     property_store.SetValue(checkbox_pk, new_value)
-
 
 
 def set_listening_device(property_store, output_device_id):
@@ -114,11 +128,21 @@ class AudioSessionHandler(metaclass=Singleton):
     def __init__(self):
         ole32.CoInitializeEx(None, 0)
         hstring = wintypes.HSTR()
-        if combase.WindowsCreateString(AUDIO_CLASS_NAME, len(AUDIO_CLASS_NAME), ctypes.byref(hstring)) != 0:
+        if (
+            combase.WindowsCreateString(
+                AUDIO_CLASS_NAME, len(AUDIO_CLASS_NAME), ctypes.byref(hstring)
+            )
+            != 0
+        ):
             raise Exception("Could not create class name HSTRING")
 
         factory = ctypes.c_void_p()
-        if combase.RoGetActivationFactory(hstring, ctypes.byref(AUDIO_POLICY_CONFIG_GUID), ctypes.byref(factory)) != 0:
+        if (
+            combase.RoGetActivationFactory(
+                hstring, ctypes.byref(AUDIO_POLICY_CONFIG_GUID), ctypes.byref(factory)
+            )
+            != 0
+        ):
             raise Exception("Could not instantiate factory")
 
         combase.WindowsDeleteString(hstring)
@@ -127,17 +151,25 @@ class AudioSessionHandler(metaclass=Singleton):
         vtable = (ctypes.c_void_p * 30).from_address(vtable_ptr)
 
         _set_persisted_default_audio_endpoint = SetPersistedFunc(vtable[25])
-        self._set_persisted_default_audio_endpoint = partial(_set_persisted_default_audio_endpoint, factory)
+        self._set_persisted_default_audio_endpoint = partial(
+            _set_persisted_default_audio_endpoint, factory
+        )
 
         _get_persisted_default_audio_endpoint = GetPersistedFunc(vtable[26])
-        self._get_persisted_default_audio_endpoint = partial(_get_persisted_default_audio_endpoint, factory)
+        self._get_persisted_default_audio_endpoint = partial(
+            _get_persisted_default_audio_endpoint, factory
+        )
 
         _clear_all_persisted_application_default_endpoints = ClearAllFunc(vtable[27])
-        self._clear_all_persisted_application_default_endpoints = partial(_clear_all_persisted_application_default_endpoints, factory)
+        self._clear_all_persisted_application_default_endpoints = partial(
+            _clear_all_persisted_application_default_endpoints, factory
+        )
 
     def get_device_for_process(self, process_id: int, flow: EDataFlow, role: ERole):
         _device_id = wintypes.HSTR()
-        hr = self._get_persisted_default_audio_endpoint(process_id, flow.value, role.value, ctypes.byref(_device_id))
+        hr = self._get_persisted_default_audio_endpoint(
+            process_id, flow.value, role.value, ctypes.byref(_device_id)
+        )
         if hr != 0:
             raise Exception("Could not get device id")
 
@@ -153,14 +185,23 @@ class AudioSessionHandler(metaclass=Singleton):
     def set_device_for_process(self, process_id: int, flow: EDataFlow, device_id: str):
         if device_id:
             device_id_hstr = wintypes.HSTR()
-            if combase.WindowsCreateString(device_id, len(device_id), ctypes.byref(device_id_hstr)) != 0:
+            if (
+                combase.WindowsCreateString(
+                    device_id, len(device_id), ctypes.byref(device_id_hstr)
+                )
+                != 0
+            ):
                 raise Exception("Could not create device ID HSTRING")
         else:
             # Reset to default
             device_id_hstr = None
 
-        for role in range(3):  # Set for ERole.eConsole, ERole.eMultimedia, and ERole.eCommunications
-            hr_role = self._set_persisted_default_audio_endpoint(process_id, flow.value, role, device_id_hstr)
+        for role in range(
+            3
+        ):  # Set for ERole.eConsole, ERole.eMultimedia, and ERole.eCommunications
+            hr_role = self._set_persisted_default_audio_endpoint(
+                process_id, flow.value, role, device_id_hstr
+            )
             if hr_role != 0:
                 raise Exception(f"Could not set device for {ERole(role).name}")
 
@@ -174,7 +215,9 @@ class AudioSessionHandler(metaclass=Singleton):
 @contextlib.contextmanager
 def switch_output_device_for_process(process_id: int, new_device_id: str):
     mgr = AudioSessionHandler()
-    current_device_id = mgr.get_device_for_process(process_id, EDataFlow.eRender, ERole.eMultimedia)
+    current_device_id = mgr.get_device_for_process(
+        process_id, EDataFlow.eRender, ERole.eMultimedia
+    )
     mgr.set_device_for_process(process_id, EDataFlow.eRender, new_device_id)
     print("Switched output device")
     yield
