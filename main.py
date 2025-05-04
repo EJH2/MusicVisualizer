@@ -7,7 +7,7 @@ import sounddevice as sd
 from PIL import Image
 from numpy.fft import fftfreq, fft
 
-from handlers.config_handler import ConfigHandler
+from util import Config
 from handlers.now_playing_handler import (
     get_music_session,
     get_device_id_from_name,
@@ -20,7 +20,7 @@ from handlers.sound_device_handler import (
 )
 
 # Set up device constants
-config = ConfigHandler()
+config = Config()
 settings = config.get_section("MAIN")
 MUSIC_PROGRAM_NAME = settings["program_name"]
 CABLE_MIC = next(

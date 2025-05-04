@@ -13,7 +13,7 @@ from pycaw.api.mmdeviceapi import PROPERTYKEY
 from pycaw.api.mmdeviceapi.depend import PROPVARIANT
 from pycaw.utils import AudioUtilities
 
-from util.singleton import Singleton
+from util import Singleton
 
 # Load DLL for functions
 combase = ctypes.windll.combase
