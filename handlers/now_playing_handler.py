@@ -1,19 +1,25 @@
 import datetime
 from io import BytesIO
+from typing import Optional
 
 import psutil
 from pycaw.utils import AudioUtilities
 from winrt.windows.devices.enumeration import DeviceInformation, DeviceClass
 from winrt.windows.media.control import (
     GlobalSystemMediaTransportControlsSessionManager as SessionManager,
+    GlobalSystemMediaTransportControlsSession as Session,
 )
-from winrt.windows.storage.streams import Buffer, InputStreamOptions
+from winrt.windows.storage.streams import (
+    Buffer,
+    InputStreamOptions,
+    IRandomAccessStreamReference,
+)
 
 _MUSIC_PROCESS_ID = None
 CALLBACK_SET = False
 
 
-async def get_device_id_from_name(name):
+async def get_device_id_from_name(name: str) -> Optional[str]:
     devices = await DeviceInformation.find_all_async_device_class(
         DeviceClass.AUDIO_RENDER
     )
@@ -26,7 +32,7 @@ async def get_device_id_from_name(name):
     return None if not device else device.id
 
 
-async def get_device_name_from_id(device_id):
+async def get_device_name_from_id(device_id: str) -> Optional[str]:
     devices = await DeviceInformation.find_all_async_device_class(
         DeviceClass.AUDIO_RENDER
     )
@@ -39,22 +45,22 @@ async def get_device_name_from_id(device_id):
     return None if not device else device.name
 
 
-def get_music_process_pid(name: str):
+def get_music_process_pid(name: str) -> Optional[int]:
     global _MUSIC_PROCESS_ID
     if _MUSIC_PROCESS_ID:
         try:
-            if psutil.Process(_MUSIC_PROCESS_ID).name() == "Spotify.exe":
+            if name in psutil.Process(_MUSIC_PROCESS_ID).name().lower():
                 return _MUSIC_PROCESS_ID
         except psutil.NoSuchProcess:
             pass
 
     sessions = AudioUtilities.GetAllSessions()
-    music_process = next((s for s in sessions if "spotify" in str(s).lower()), None)
+    music_process = next((s for s in sessions if name.lower() in str(s).lower()), None)
     _MUSIC_PROCESS_ID = None if not music_process else music_process.ProcessId
     return _MUSIC_PROCESS_ID
 
 
-async def get_music_session(name: str):
+async def get_music_session(name: str) -> Session:
     session_manager = await SessionManager.request_async()
     sessions = session_manager.get_sessions()
     music_session = next(
@@ -68,8 +74,9 @@ async def get_music_session(name: str):
     return music_session
 
 
-async def get_watermarked_thumbnail(thumbnail):
+async def get_watermarked_thumbnail(thumbnail: IRandomAccessStreamReference) -> BytesIO:
     readable_stream = await thumbnail.open_read_async()
+    # noinspection PyPropertyAccess
     thumb_read_buffer = Buffer(readable_stream.size)
     await readable_stream.read_async(
         thumb_read_buffer, thumb_read_buffer.capacity, InputStreamOptions.READ_AHEAD
@@ -82,7 +89,7 @@ async def get_watermarked_thumbnail(thumbnail):
     return binary
 
 
-def get_human_timestamp_from_timedelta(timedelta: datetime.timedelta):
+def get_human_timestamp_from_timedelta(timedelta: datetime.timedelta) -> str:
     total_seconds = int(timedelta.total_seconds())
     seconds = total_seconds % 60
     minutes = (total_seconds // 60) % 60
@@ -90,7 +97,7 @@ def get_human_timestamp_from_timedelta(timedelta: datetime.timedelta):
     return f"{f'{hours}:' if hours else ''}{minutes:02}:{seconds:02}"
 
 
-async def get_media_session_data(session):
+async def get_media_session_data(session: Session) -> tuple[str, list[str]]:
     song_properties = await session.try_get_media_properties_async()
     title = song_properties.title
     artist = song_properties.artist
@@ -99,4 +106,5 @@ async def get_media_session_data(session):
     # timeline_data = (timeline_properties.position, timeline_properties.end_time, timeline_properties.last_updated_time)
     # formatted_timeline = f"{get_human_timestamp_from_timedelta(timeline_data[0])} / {get_human_timestamp_from_timedelta(timeline_data[1])}"
 
+    # noinspection PyTypeChecker
     return title, [artist]
