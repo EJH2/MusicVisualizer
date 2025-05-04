@@ -1,5 +1,6 @@
 import importlib
 import asyncio
+from typing import Optional
 
 import numpy as np
 import pygame
@@ -7,12 +8,13 @@ import sounddevice as sd
 from PIL import Image
 from numpy.fft import fftfreq, fft
 
+from adapters.base_adapter import BaseAdapter
 from util import Config
 from handlers.now_playing_handler import (
     get_music_session,
     get_device_id_from_name,
     get_music_process_pid,
-    get_current_song,
+    get_media_session_data,
 )
 from handlers.sound_device_handler import (
     switch_output_device_for_process,
@@ -68,11 +70,11 @@ artist_rect = artist_entity.get_rect().move(
 
 # Try to set up API Manager
 try:
-    music_mgr = importlib.import_module(
-        f"handlers.{MUSIC_PROGRAM_NAME}_handler"
-    ).ApiHandler()
+    music_mgr: Optional[BaseAdapter] = importlib.import_module(
+        f"adapters.{MUSIC_PROGRAM_NAME}_adapter"
+    ).ApiAdapter()
 except ImportError:
-    print("Could not fetch platform-specific handler")
+    print("Could not fetch platform-specific adapter")
     music_mgr = None
 
 
@@ -212,13 +214,13 @@ async def update_music_data(session):
         if not music_mgr:
             raise KeyError
 
-        title, artists, thumbnail = await music_mgr.get_current_song()
+        title, artists, thumbnail = await music_mgr.get_current_song(session)
         img = Image.open(thumbnail)
         thumbnail_entity = pygame.image.fromstring(
             img.tobytes(), img.size, img.mode
         ).convert()
     except KeyError:
-        title, artists = await get_current_song(session)
+        title, artists = await get_media_session_data(session)
         thumbnail_entity = pygame.image.load(settings["backup_thumb_path"])
 
     thumbnail_entity = pygame.transform.scale(
