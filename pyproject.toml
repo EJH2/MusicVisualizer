@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "proceduralvisualization"
+version = "0.1.0"
+description = ""
+authors = ["Ethan <ethan.harriz@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+sounddevice = "^0.5.1"
+numpy = "^2.2.5"
+pygame = "^2.6.1"
+aiohttp = "^3.11.18"
+pillow = "^11.2.1"
+psutil = "^7.0.0"
+winrt-runtime = "^3.1.0"
+winrt-windows-devices-enumeration = "^3.1.0"
+winrt-windows-media-control = "^3.1.0"
+winrt-windows-storage-streams = "^3.1.0"
+pycaw = "^20240210"
+winrt-windows-devices = "^3.1.0"
+winrt-windows-foundation = "^3.1.0"
+winrt-windows-foundation-collections = "^3.1.0"
+comtypes = "^1.4.10"
+
+[tool.poetry.group.dev.dependencies]
+black = "^25.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
