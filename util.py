@@ -1,5 +1,6 @@
 import configparser
 import os
+from typing import MutableMapping, Union
 
 
 class Singleton(type):
@@ -20,13 +21,13 @@ class Config(metaclass=Singleton):
         config.read(self._config_path)
         self._config = config
 
-    def get_section(self, section):
+    def get_section(self, section: str):
         if not section in self._config.sections():
             self._config.add_section(section)
 
         return self._config[section]
 
-    def save_section(self, section, data):
+    def save_section(self, section: str, data: Union[dict, MutableMapping]):
         config_section = self.get_section(section)
         for key, value in data.items():
             config_section[key] = value
