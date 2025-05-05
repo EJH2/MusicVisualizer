@@ -2,10 +2,10 @@ from abc import abstractmethod
 from io import BytesIO
 from typing import Optional
 
-from util import Config
+from util import Config, Singleton
 
 
-class BaseAdapter:
+class BaseAdapter(metaclass=Singleton):
     def __init__(self, adapter_name: str):
         self._config = Config()
         self._settings = self._config.get_section(adapter_name)
