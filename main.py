@@ -1,5 +1,5 @@
-import importlib
 import asyncio
+import importlib
 from typing import Optional
 
 import numpy as np
@@ -9,7 +9,6 @@ from PIL import Image
 from numpy.fft import fftfreq, fft
 
 from adapters.base_adapter import BaseAdapter
-from util import Config
 from handlers.now_playing_handler import (
     get_music_session,
     get_device_id_from_name,
@@ -20,11 +19,17 @@ from handlers.sound_device_handler import (
     switch_output_device_for_process,
     listen_to_input_device,
 )
+from util import Config
 
-# Set up device constants
+# Set up config constants
 config = Config()
 settings = config.get_section("MAIN")
-MUSIC_PROGRAM_NAME = settings["program_name"]
+try:
+    MUSIC_PROGRAM_NAME = settings["program_name"]
+except KeyError:
+    raise Exception("Program name must be defined in config.ini")
+
+# Set up device constants
 CABLE_MIC = next(
     device for device in sd.query_devices() if settings["cable_mic"] in device["name"]
 )
@@ -40,7 +45,6 @@ CHANNELS = 2
 # Set up pygame
 pygame.init()
 pygame.font.init()
-clock = pygame.time.Clock()
 title_font = pygame.font.SysFont("Bauhaus 93", 76)
 artist_font = pygame.font.SysFont("Bauhaus 93", 42)
 SCREEN_WIDTH = 1920

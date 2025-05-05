@@ -1,7 +1,7 @@
 import contextlib
 import ctypes
-from ctypes import wintypes, Structure
 import sys
+from ctypes import wintypes, Structure
 from enum import Enum
 from functools import partial
 from typing import Optional
