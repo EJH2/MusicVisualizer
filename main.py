@@ -25,9 +25,9 @@ from util import Config
 config = Config()
 settings = config.get_section("MAIN")
 try:
-    MUSIC_PROGRAM_NAME = settings["program_name"]
+    MUSIC_PROGRAM_NAME = settings["music_program"]
 except KeyError:
-    raise Exception("Program name must be defined in config.ini")
+    raise Exception("Music program must be defined in config.ini")
 
 # Set up device constants
 CABLE_MIC = next(

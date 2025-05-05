@@ -3,4 +3,4 @@ cable_mic = CABLE Output
 cable_speakers = CABLE Input
 background_path = images/background.png
 backup_thumb_path = images/backup_thumb.png
-program_name =
+music_program =
