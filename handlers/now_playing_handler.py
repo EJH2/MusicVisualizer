@@ -97,14 +97,20 @@ def get_human_timestamp_from_timedelta(timedelta: datetime.timedelta) -> str:
     return f"{f'{hours}:' if hours else ''}{minutes:02}:{seconds:02}"
 
 
+async def get_media_timeline_data(session: Session) -> tuple[str, str]:
+    timeline_data = session.get_timeline_properties()
+    # noinspection PyTypeChecker
+    current_time = get_human_timestamp_from_timedelta(timeline_data.position)
+    # noinspection PyTypeChecker
+    total_time = get_human_timestamp_from_timedelta(timeline_data.end_time)
+    print(timeline_data.last_updated_time)
+    return current_time, total_time
+
+
 async def get_media_session_data(session: Session) -> tuple[str, list[str]]:
     song_properties = await session.try_get_media_properties_async()
     title = song_properties.title
     artist = song_properties.artist
-
-    # timeline_properties = session.get_timeline_properties()
-    # timeline_data = (timeline_properties.position, timeline_properties.end_time, timeline_properties.last_updated_time)
-    # formatted_timeline = f"{get_human_timestamp_from_timedelta(timeline_data[0])} / {get_human_timestamp_from_timedelta(timeline_data[1])}"
 
     # noinspection PyTypeChecker
     return title, [artist]

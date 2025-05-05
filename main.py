@@ -14,6 +14,7 @@ from handlers.now_playing_handler import (
     get_device_id_from_name,
     get_music_process_pid,
     get_media_session_data,
+    get_media_timeline_data,
 )
 from handlers.sound_device_handler import (
     switch_output_device_for_process,
@@ -47,6 +48,7 @@ pygame.init()
 pygame.font.init()
 title_font = pygame.font.SysFont("Bauhaus 93", 76)
 artist_font = pygame.font.SysFont("Bauhaus 93", 42)
+time_font = pygame.font.SysFont("Bauhaus 93", 24)
 SCREEN_WIDTH = 1920
 SCREEN_HEIGHT = 1080
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -70,6 +72,18 @@ title_rect = title_entity.get_rect().move(
 artist_entity = artist_font.render("Borealising", True, (175, 175, 175))
 artist_rect = artist_entity.get_rect().move(
     thumb_size * 1.6, SCREEN_HEIGHT - (thumb_size * 0.5) - artist_entity.get_height()
+)
+CURRENT_SONG_TIME = "0:00"
+current_time_entity = time_font.render(CURRENT_SONG_TIME, True, (255, 255, 255))
+current_time_rect = current_time_entity.get_rect().move(
+    thumb_size * 0.5,
+    SCREEN_HEIGHT - (thumb_size * 0.3) - current_time_entity.get_height(),
+)
+TOTAL_SONG_TIME = "0:00"
+total_time_entity = time_font.render(TOTAL_SONG_TIME, True, (255, 255, 255))
+total_time_rect = total_time_entity.get_rect().move(
+    SCREEN_WIDTH - (thumb_size * 0.5),
+    SCREEN_HEIGHT - (thumb_size * 0.3) - total_time_entity.get_height(),
 )
 
 # Try to set up API Manager
@@ -150,7 +164,9 @@ def generate_waveform_points(indata: np.array, frames: int) -> tuple[list, list,
     return left_points, right_points, tips
 
 
-def callback(indata, frames, time, status):
+def update_visualizer_data(
+    indata: np.ndarray, frames: int, _, status: sd.CallbackFlags
+):
     # TODO: Clean this up and fix visualizer positioning
     if status:
         print(status)
@@ -234,6 +250,20 @@ async def update_music_data(session):
     artist_entity = artist_font.render(", ".join(artists), True, (175, 175, 175))
 
 
+async def update_timeline(session):
+    # TODO: Add background task to manage redrawing the timer every second and draw the bar
+    global current_time_entity, total_time_entity, CURRENT_SONG_TIME, TOTAL_SONG_TIME
+    current_time, total_time = await get_media_timeline_data(session)
+
+    if TOTAL_SONG_TIME != total_time:
+        total_time_entity = time_font.render(total_time, True, (255, 255, 255))
+        TOTAL_SONG_TIME = total_time
+
+    if CURRENT_SONG_TIME != current_time:
+        current_time_entity = time_font.render(current_time, True, (255, 255, 255))
+        CURRENT_SONG_TIME = current_time
+
+
 async def main():
     music_pid = get_music_process_pid(MUSIC_PROGRAM_NAME)
     if not music_pid:
@@ -248,12 +278,16 @@ async def main():
         # TODO: Differentiate these two callbacks so we don't redraw uselessly
         media_properties_changed = lambda x, _: asyncio.run(update_music_data(x))
         playback_info_changed = lambda x, _: asyncio.run(update_music_data(x))
+        timeline_changed = lambda x, _: asyncio.run(update_timeline(x))
         music_session.add_media_properties_changed(media_properties_changed)
         # music_session.add_playback_info_changed(playback_info_changed)
+        music_session.add_timeline_properties_changed(timeline_changed)
         await update_music_data(music_session)
 
         with sd.InputStream(
-            device=CABLE_MIC.get("index"), channels=CHANNELS, callback=callback
+            device=CABLE_MIC.get("index"),
+            channels=CHANNELS,
+            callback=update_visualizer_data,
         ):
             running = True
             while running:
@@ -267,6 +301,8 @@ async def main():
                     screen.blit(thumbnail_entity, thumbnail_rect)
                     screen.blit(title_entity, title_rect)
                     screen.blit(artist_entity, artist_rect)
+                    screen.blit(current_time_entity, current_time_rect)
+                    screen.blit(total_time_entity, total_time_rect)
                 except pygame.error:
                     pass
                 pygame.display.update()
