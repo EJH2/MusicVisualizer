@@ -278,7 +278,6 @@ async def update_music_data(session):
 
 def update_playback_data(session):
     playback_status = get_media_playback_status(session)
-    print("Updating playback data...", PlaybackStatus(playback_status).name)
 
     if playback_status == PlaybackStatus.STOPPED:
         pygame.time.set_timer(timer, 0)
@@ -289,7 +288,6 @@ def update_playback_data(session):
 
 
 def update_timeline(session):
-    # TODO: Add background task to manage redrawing the timer every second and draw the bar
     global CURRENT_SONG_TIME, TOTAL_SONG_TIME
     current_timedelta, total_timedelta = get_media_timeline_data(session)
 
