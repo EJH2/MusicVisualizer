@@ -278,7 +278,7 @@ async def update_music_data(session: Session):
 def update_playback_data(session: Session):
     playback_status = get_media_playback_status(session)
 
-    if playback_status == PlaybackStatus.STOPPED:
+    if playback_status == PlaybackStatus.PAUSED:
         pygame.time.set_timer(timer, 0)
 
     if playback_status == PlaybackStatus.PLAYING:
