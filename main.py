@@ -247,8 +247,8 @@ async def update_music_data(session):
             raise KeyError
 
         title, artists, thumbnail = await music_mgr.get_current_song()
-        img = Image.open(thumbnail)
-        thumbnail_entity = pygame.image.fromstring(
+        img = Image.open(thumbnail).convert("RGBA")
+        thumbnail_entity = pygame.image.frombytes(
             img.tobytes(), img.size, img.mode
         ).convert()
     except KeyError:
