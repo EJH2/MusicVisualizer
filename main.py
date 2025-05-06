@@ -8,12 +8,11 @@ import pygame
 import sounddevice as sd
 from PIL import Image
 from numpy.fft import fftfreq, fft
-from winrt.windows.media.control import (
-    GlobalSystemMediaTransportControlsSessionPlaybackStatus as PlaybackStatus,
-)
 
 from adapters.base_adapter import BaseAdapter
 from handlers.now_playing_handler import (
+    Session,
+    PlaybackStatus,
     get_music_session,
     get_device_id_from_name,
     get_music_process_pid,
@@ -251,7 +250,7 @@ def update_visualizer_data(
     #     last_pos = pos
 
 
-async def update_music_data(session):
+async def update_music_data(session: Session):
     global thumbnail_entity, title_entity, artist_entity
     try:
         # If we don't have a music manager, rely on native Windows
@@ -276,7 +275,7 @@ async def update_music_data(session):
     update_timeline(session)
 
 
-def update_playback_data(session):
+def update_playback_data(session: Session):
     playback_status = get_media_playback_status(session)
 
     if playback_status == PlaybackStatus.STOPPED:
@@ -287,7 +286,7 @@ def update_playback_data(session):
         pygame.time.set_timer(timer, 1000)
 
 
-def update_timeline(session):
+def update_timeline(session: Session):
     global CURRENT_SONG_TIME, TOTAL_SONG_TIME
     current_timedelta, total_timedelta = get_media_timeline_data(session)
 

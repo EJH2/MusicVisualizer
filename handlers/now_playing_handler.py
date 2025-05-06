@@ -8,6 +8,7 @@ from winrt.windows.devices.enumeration import DeviceInformation, DeviceClass
 from winrt.windows.media.control import (
     GlobalSystemMediaTransportControlsSessionManager as SessionManager,
     GlobalSystemMediaTransportControlsSession as Session,
+    GlobalSystemMediaTransportControlsSessionPlaybackStatus as PlaybackStatus,
 )
 from winrt.windows.storage.streams import (
     Buffer,
@@ -108,8 +109,9 @@ def get_media_timeline_data(
     return current_time, total_time
 
 
-def get_media_playback_status(session: Session):
+def get_media_playback_status(session: Session) -> PlaybackStatus:
     playback_info = session.get_playback_info()
+    # noinspection PyTypeChecker
     return playback_info.playback_status
 
 
