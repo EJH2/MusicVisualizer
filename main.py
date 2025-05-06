@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import importlib
+import textwrap
 from typing import Optional
 
 import numpy as np
@@ -251,7 +252,7 @@ def update_visualizer_data(
 
 
 async def update_music_data(session: Session):
-    global thumbnail_entity, title_entity, artist_entity
+    global thumbnail_entity, title_entity, title_rect, artist_entity
     try:
         # If we don't have a music manager, rely on native Windows
         if not music_mgr:
@@ -269,7 +270,12 @@ async def update_music_data(session: Session):
     thumbnail_entity = pygame.transform.scale(
         thumbnail_entity, (THUMBNAIL_SIZE, THUMBNAIL_SIZE)
     )
-    title_entity = title_font.render(title, True, (255, 255, 255))
+    wrapped_title = textwrap.fill(title, 30)
+    title_entity = title_font.render(wrapped_title, True, (255, 255, 255))
+    title_rect = title_entity.get_rect().move(
+        THUMBNAIL_SIZE * 1.55,
+        SCREEN_HEIGHT - (THUMBNAIL_SIZE * 0.65) - title_entity.get_height(),
+    )
     artist_entity = artist_font.render(", ".join(artists), True, (175, 175, 175))
 
     update_timeline(session)
