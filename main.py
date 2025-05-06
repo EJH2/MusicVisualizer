@@ -58,7 +58,7 @@ artist_font = pygame.font.SysFont("Bauhaus 93", 42)
 time_font = pygame.font.SysFont("Bauhaus 93", 24)
 SCREEN_WIDTH = 1920
 SCREEN_HEIGHT = 1080
-THUMBNAIL_SIZE = SCREEN_WIDTH // 6
+THUMBNAIL_SIZE = SCREEN_WIDTH // 7
 TIMELINE_HEIGHT = SCREEN_HEIGHT // 180
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 visualizer_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -84,12 +84,12 @@ thumbnail_rect = thumbnail_entity.get_rect().move(
 )
 title_entity = title_font.render("Adjudicate", True, (255, 255, 255))
 title_rect = title_entity.get_rect().move(
-    THUMBNAIL_SIZE * 1.6,
+    THUMBNAIL_SIZE * 1.55,
     SCREEN_HEIGHT - (THUMBNAIL_SIZE * 0.65) - title_entity.get_height(),
 )
 artist_entity = artist_font.render("Borealising", True, (175, 175, 175))
 artist_rect = artist_entity.get_rect().move(
-    THUMBNAIL_SIZE * 1.6,
+    THUMBNAIL_SIZE * 1.55,
     SCREEN_HEIGHT - (THUMBNAIL_SIZE * 0.5) - artist_entity.get_height(),
 )
 CURRENT_SONG_TIME = datetime.timedelta(0)
@@ -98,7 +98,7 @@ current_time_entity = time_font.render(
 )
 current_time_rect = current_time_entity.get_rect().move(
     THUMBNAIL_SIZE * 0.5,
-    SCREEN_HEIGHT - (THUMBNAIL_SIZE * 0.3) - current_time_entity.get_height(),
+    SCREEN_HEIGHT - (THUMBNAIL_SIZE * 0.25) - current_time_entity.get_height(),
 )
 TOTAL_SONG_TIME = datetime.timedelta(0)
 total_time_entity = time_font.render(
@@ -106,7 +106,7 @@ total_time_entity = time_font.render(
 )
 total_time_rect = total_time_entity.get_rect().move(
     SCREEN_WIDTH - (THUMBNAIL_SIZE * 0.5) - total_time_entity.get_width(),
-    SCREEN_HEIGHT - (THUMBNAIL_SIZE * 0.3) - total_time_entity.get_height(),
+    SCREEN_HEIGHT - (THUMBNAIL_SIZE * 0.25) - total_time_entity.get_height(),
 )
 
 # Try to set up API Manager
