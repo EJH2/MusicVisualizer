@@ -228,7 +228,6 @@ def switch_output_device_for_process(process_id: int, new_device_id: str):
 @contextlib.contextmanager
 def listen_to_input_device(input_device: str, output_device: Optional[str]):
     stripped_input_id = get_stripped_id(input_device)
-    print(stripped_input_id)
     stripped_output_id = get_stripped_id(output_device)
     store = get_device_store(stripped_input_id)
     if not store:

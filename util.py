@@ -15,7 +15,6 @@ class Singleton(type):
 class Config(metaclass=Singleton):
     def __init__(self):
         self._config_path = os.environ["CONFIG_PATH"]
-        print(self._config_path)
 
         config = configparser.ConfigParser()
         config.read(self._config_path)

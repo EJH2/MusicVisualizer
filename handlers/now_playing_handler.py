@@ -99,11 +99,10 @@ def get_human_timestamp_from_timedelta(timedelta: datetime.timedelta) -> str:
 
 async def get_media_timeline_data(session: Session) -> tuple[str, str]:
     timeline_data = session.get_timeline_properties()
+    current_time = timeline_data.position
+    total_time = timeline_data.end_time
+
     # noinspection PyTypeChecker
-    current_time = get_human_timestamp_from_timedelta(timeline_data.position)
-    # noinspection PyTypeChecker
-    total_time = get_human_timestamp_from_timedelta(timeline_data.end_time)
-    print(timeline_data.last_updated_time)
     return current_time, total_time
 
 
