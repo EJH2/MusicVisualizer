@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import importlib
 from typing import Optional
 
@@ -7,6 +8,9 @@ import pygame
 import sounddevice as sd
 from PIL import Image
 from numpy.fft import fftfreq, fft
+from winrt.windows.media.control import (
+    GlobalSystemMediaTransportControlsSessionPlaybackStatus as PlaybackStatus,
+)
 
 from adapters.base_adapter import BaseAdapter
 from handlers.now_playing_handler import (
@@ -15,6 +19,8 @@ from handlers.now_playing_handler import (
     get_music_process_pid,
     get_media_session_data,
     get_media_timeline_data,
+    get_human_timestamp_from_timedelta,
+    get_media_playback_status,
 )
 from handlers.sound_device_handler import (
     switch_output_device_for_process,
@@ -46,6 +52,8 @@ CHANNELS = 2
 # Set up pygame
 pygame.init()
 pygame.font.init()
+timer = pygame.USEREVENT + 1
+pygame.time.set_timer(timer, 1000)
 title_font = pygame.font.SysFont("Bauhaus 93", 76)
 artist_font = pygame.font.SysFont("Bauhaus 93", 42)
 time_font = pygame.font.SysFont("Bauhaus 93", 24)
@@ -73,14 +81,18 @@ artist_entity = artist_font.render("Borealising", True, (175, 175, 175))
 artist_rect = artist_entity.get_rect().move(
     thumb_size * 1.6, SCREEN_HEIGHT - (thumb_size * 0.5) - artist_entity.get_height()
 )
-CURRENT_SONG_TIME = "0:00"
-current_time_entity = time_font.render(CURRENT_SONG_TIME, True, (255, 255, 255))
+CURRENT_SONG_TIME = datetime.timedelta(0)
+current_time_entity = time_font.render(
+    get_human_timestamp_from_timedelta(CURRENT_SONG_TIME), True, (255, 255, 255)
+)
 current_time_rect = current_time_entity.get_rect().move(
     thumb_size * 0.5,
     SCREEN_HEIGHT - (thumb_size * 0.3) - current_time_entity.get_height(),
 )
-TOTAL_SONG_TIME = "0:00"
-total_time_entity = time_font.render(TOTAL_SONG_TIME, True, (255, 255, 255))
+TOTAL_SONG_TIME = datetime.timedelta(0)
+total_time_entity = time_font.render(
+    get_human_timestamp_from_timedelta(TOTAL_SONG_TIME), True, (255, 255, 255)
+)
 total_time_rect = total_time_entity.get_rect().move(
     SCREEN_WIDTH - (thumb_size * 0.5),
     SCREEN_HEIGHT - (thumb_size * 0.3) - total_time_entity.get_height(),
@@ -249,19 +261,45 @@ async def update_music_data(session):
     title_entity = title_font.render(title, True, (255, 255, 255))
     artist_entity = artist_font.render(", ".join(artists), True, (175, 175, 175))
 
+    update_timeline(session)
 
-async def update_timeline(session):
+
+def update_playback_data(session):
+    playback_status = get_media_playback_status(session)
+    print("Updating playback data...", PlaybackStatus(playback_status).name)
+
+    if playback_status == PlaybackStatus.STOPPED:
+        pygame.time.set_timer(timer, 0)
+
+    if playback_status == PlaybackStatus.PLAYING:
+        update_timeline(session)
+        pygame.time.set_timer(timer, 1000)
+
+
+def update_timeline(session):
     # TODO: Add background task to manage redrawing the timer every second and draw the bar
-    global current_time_entity, total_time_entity, CURRENT_SONG_TIME, TOTAL_SONG_TIME
-    current_time, total_time = await get_media_timeline_data(session)
+    global CURRENT_SONG_TIME, TOTAL_SONG_TIME
+    current_timedelta, total_timedelta = get_media_timeline_data(session)
 
-    if TOTAL_SONG_TIME != total_time:
-        total_time_entity = time_font.render(total_time, True, (255, 255, 255))
-        TOTAL_SONG_TIME = total_time
+    if TOTAL_SONG_TIME != total_timedelta:
+        TOTAL_SONG_TIME = total_timedelta
 
-    if CURRENT_SONG_TIME != current_time:
-        current_time_entity = time_font.render(current_time, True, (255, 255, 255))
-        CURRENT_SONG_TIME = current_time
+    if CURRENT_SONG_TIME != current_timedelta:
+        CURRENT_SONG_TIME = current_timedelta
+
+
+def draw_timeline():
+    global current_time_entity, total_time_entity
+    current_time_entity = time_font.render(
+        get_human_timestamp_from_timedelta(CURRENT_SONG_TIME),
+        True,
+        (255, 255, 255),
+    )
+    total_time_entity = time_font.render(
+        get_human_timestamp_from_timedelta(TOTAL_SONG_TIME),
+        True,
+        (255, 255, 255),
+    )
 
 
 async def main():
@@ -277,13 +315,14 @@ async def main():
         music_session = await get_music_session(MUSIC_PROGRAM_NAME)
         # TODO: Differentiate these two callbacks so we don't redraw uselessly
         media_properties_changed = lambda x, _: asyncio.run(update_music_data(x))
-        playback_info_changed = lambda x, _: asyncio.run(update_music_data(x))
-        timeline_changed = lambda x, _: asyncio.run(update_timeline(x))
+        playback_info_changed = lambda x, _: update_playback_data(x)
+        timeline_changed = lambda x, _: update_timeline(x)
         music_session.add_media_properties_changed(media_properties_changed)
-        # music_session.add_playback_info_changed(playback_info_changed)
+        music_session.add_playback_info_changed(playback_info_changed)
         music_session.add_timeline_properties_changed(timeline_changed)
         await update_music_data(music_session)
 
+        global total_time_entity, current_time_entity, CURRENT_SONG_TIME
         with sd.InputStream(
             device=CABLE_MIC.get("index"),
             channels=CHANNELS,
@@ -294,6 +333,12 @@ async def main():
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         running = False
+
+                    if event.type == timer and CURRENT_SONG_TIME:
+                        draw_timeline()
+                        CURRENT_SONG_TIME = CURRENT_SONG_TIME + datetime.timedelta(
+                            seconds=1
+                        )
 
                 screen.fill((0, 0, 0))
                 try:

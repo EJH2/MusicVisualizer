@@ -97,13 +97,20 @@ def get_human_timestamp_from_timedelta(timedelta: datetime.timedelta) -> str:
     return f"{f'{hours}:' if hours else ''}{minutes:02}:{seconds:02}"
 
 
-async def get_media_timeline_data(session: Session) -> tuple[str, str]:
+def get_media_timeline_data(
+    session: Session,
+) -> tuple[datetime.timedelta, datetime.timedelta]:
     timeline_data = session.get_timeline_properties()
     current_time = timeline_data.position
     total_time = timeline_data.end_time
 
     # noinspection PyTypeChecker
     return current_time, total_time
+
+
+def get_media_playback_status(session: Session):
+    playback_info = session.get_playback_info()
+    return playback_info.playback_status
 
 
 async def get_media_session_data(session: Session) -> tuple[str, list[str]]:
