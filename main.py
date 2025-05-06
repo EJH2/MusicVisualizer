@@ -157,11 +157,11 @@ def generate_waveform_points(indata: np.array, frames: int) -> tuple[list, list,
             [
                 (
                     chunked_left_xf[frame],
-                    (SCREEN_HEIGHT / 2) - (chunked_left_yf[frame]) * 0.9,
+                    (SCREEN_HEIGHT / 2) - (chunked_left_yf[frame] * 2) * 0.9,
                 ),  # Bar starting point
                 (
                     chunked_left_xf[frame],
-                    (SCREEN_HEIGHT / 2) + (chunked_left_yf[frame]) * 0.9,
+                    (SCREEN_HEIGHT / 2) + (chunked_left_yf[frame] * 2) * 0.9,
                 ),  # Bar ending point
             ]
         )
@@ -169,11 +169,11 @@ def generate_waveform_points(indata: np.array, frames: int) -> tuple[list, list,
             [
                 (
                     chunked_right_xf[frame],
-                    (SCREEN_HEIGHT / 2) - (chunked_right_yf[frame]) * 0.9,
+                    (SCREEN_HEIGHT / 2) - (chunked_right_yf[frame] * 2) * 0.9,
                 ),  # Bar starting point
                 (
                     chunked_right_xf[frame],
-                    (SCREEN_HEIGHT / 2) + (chunked_right_yf[frame]) * 0.9,
+                    (SCREEN_HEIGHT / 2) + (chunked_right_yf[frame] * 2) * 0.9,
                 ),  # Bar ending point
             ]
         )
@@ -182,21 +182,21 @@ def generate_waveform_points(indata: np.array, frames: int) -> tuple[list, list,
                 [
                     (
                         chunked_left_xf[frame],
-                        (SCREEN_HEIGHT / 2) - (chunked_left_yf[frame]),
+                        (SCREEN_HEIGHT / 2) - (chunked_left_yf[frame] * 2),
                     ),  # Bar starting point
                     (
                         chunked_left_xf[frame],
-                        (SCREEN_HEIGHT / 2) + (chunked_left_yf[frame]),
+                        (SCREEN_HEIGHT / 2) + (chunked_left_yf[frame] * 2),
                     ),  # Bar ending point
                 ],
                 [
                     (
                         chunked_right_xf[frame],
-                        (SCREEN_HEIGHT / 2) - (chunked_right_yf[frame]),
+                        (SCREEN_HEIGHT / 2) - (chunked_right_yf[frame] * 2),
                     ),  # Bar starting point
                     (
                         chunked_right_xf[frame],
-                        (SCREEN_HEIGHT / 2) + (chunked_right_yf[frame]),
+                        (SCREEN_HEIGHT / 2) + (chunked_right_yf[frame] * 2),
                     ),  # Bar ending point
                 ],
             )
@@ -207,7 +207,7 @@ def generate_waveform_points(indata: np.array, frames: int) -> tuple[list, list,
 def update_visualizer_data(
     indata: np.ndarray, frames: int, _, status: sd.CallbackFlags
 ):
-    # TODO: Clean this up and fix visualizer positioning
+    # TODO: Clean this up
     if status:
         print(status)
 
@@ -390,7 +390,6 @@ async def main():
         music_pid, speakers_id
     ):
         music_session = await get_music_session(MUSIC_PROGRAM_NAME)
-        # TODO: Differentiate these two callbacks so we don't redraw uselessly
         media_properties_changed = lambda x, _: asyncio.run(update_music_data(x))
         playback_info_changed = lambda x, _: update_playback_data(x)
         timeline_changed = lambda x, _: update_timeline(x)
@@ -398,6 +397,7 @@ async def main():
         music_session.add_playback_info_changed(playback_info_changed)
         music_session.add_timeline_properties_changed(timeline_changed)
         await update_music_data(music_session)
+        draw_timeline()
 
         global total_time_entity, current_time_entity, CURRENT_SONG_TIME
         with sd.InputStream(
@@ -430,7 +430,6 @@ async def main():
                     pass
                 pygame.display.update()
 
-            # Let stream close before we quit so we don't get chopped audio at the end
             pygame.quit()
 
 
