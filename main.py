@@ -120,44 +120,60 @@ except ImportError:
     music_mgr = None
 
 
+def avg_chunk_array(arr: np.array, chunk_size: int) -> np.array:
+    num_chunks = (len(arr) + chunk_size - 1) // chunk_size
+    chunked_arr = np.array(
+        [np.mean(arr[i * chunk_size : (i + 1) * chunk_size]) for i in range(num_chunks)]
+    )
+    return chunked_arr
+
+
 def generate_waveform_points(indata: np.array, frames: int) -> tuple[list, list, list]:
     left_channel = indata[:, 0]
     right_channel = indata[:, 1]
 
     # TODO: Isolate like middle third of each range for display
-    left_yf = np.abs(fft(left_channel)).astype(float)
-    right_yf = np.abs(fft(right_channel)).astype(float)
     xf = fftfreq(frames, 1 / INPUT_SAMPLERATE)
     xf = xf - np.min(xf)
-    left_xf = ((xf / np.max(xf)) * (SCREEN_WIDTH / 2)).astype(float)
+    _left_xf = ((xf / np.max(xf)) * (SCREEN_WIDTH / 2)).astype(float)
+    indices = np.argsort(_left_xf)
+    left_xf = _left_xf[indices]
     right_xf = (SCREEN_WIDTH - left_xf).astype(float)
+    left_yf = np.abs(fft(left_channel)).astype(float)[indices]
+    right_yf = np.abs(fft(right_channel)).astype(float)[indices]
+
+    chunk_size = 3
+    chunked_left_xf = avg_chunk_array(left_xf, chunk_size)
+    chunked_right_xf = avg_chunk_array(right_xf, chunk_size)
+    chunked_left_yf = avg_chunk_array(left_yf, chunk_size)
+    chunked_right_yf = avg_chunk_array(right_yf, chunk_size)
 
     left_points = []
     right_points = []
     tips = []
     # TODO: Check how to mask lines so I can get the same effect as desktop, may end up being more intensive to draw tips
-    for frame in range(frames):
+    for frame in range(len(chunked_left_xf)):
         left_points.append(
             [
                 (
-                    left_xf[frame],
-                    (SCREEN_HEIGHT / 2) - (left_yf[frame] * 3) * 0.9,
+                    chunked_left_xf[frame],
+                    (SCREEN_HEIGHT / 2) - (chunked_left_yf[frame] * 3) * 0.9,
                 ),  # Bar starting point
                 (
-                    left_xf[frame],
-                    (SCREEN_HEIGHT / 2) + (left_yf[frame] * 3) * 0.9,
+                    chunked_left_xf[frame],
+                    (SCREEN_HEIGHT / 2) + (chunked_left_yf[frame] * 3) * 0.9,
                 ),  # Bar ending point
             ]
         )
         right_points.append(
             [
                 (
-                    right_xf[frame],
-                    (SCREEN_HEIGHT / 2) - (right_yf[frame] * 3) * 0.9,
+                    chunked_right_xf[frame],
+                    (SCREEN_HEIGHT / 2) - (chunked_right_yf[frame] * 3) * 0.9,
                 ),  # Bar starting point
                 (
-                    right_xf[frame],
-                    (SCREEN_HEIGHT / 2) + (right_yf[frame] * 3) * 0.9,
+                    chunked_right_xf[frame],
+                    (SCREEN_HEIGHT / 2) + (chunked_right_yf[frame] * 3) * 0.9,
                 ),  # Bar ending point
             ]
         )
@@ -165,22 +181,22 @@ def generate_waveform_points(indata: np.array, frames: int) -> tuple[list, list,
             (
                 [
                     (
-                        left_xf[frame],
-                        (SCREEN_HEIGHT / 2) - (left_yf[frame] * 3),
+                        chunked_left_xf[frame],
+                        (SCREEN_HEIGHT / 2) - (chunked_left_yf[frame] * 3),
                     ),  # Bar starting point
                     (
-                        left_xf[frame],
-                        (SCREEN_HEIGHT / 2) + (left_yf[frame] * 3),
+                        chunked_left_xf[frame],
+                        (SCREEN_HEIGHT / 2) + (chunked_left_yf[frame] * 3),
                     ),  # Bar ending point
                 ],
                 [
                     (
-                        right_xf[frame],
-                        (SCREEN_HEIGHT / 2) - (right_yf[frame] * 3),
+                        chunked_right_xf[frame],
+                        (SCREEN_HEIGHT / 2) - (chunked_right_yf[frame] * 3),
                     ),  # Bar starting point
                     (
-                        right_xf[frame],
-                        (SCREEN_HEIGHT / 2) + (right_yf[frame] * 3),
+                        chunked_right_xf[frame],
+                        (SCREEN_HEIGHT / 2) + (chunked_right_yf[frame] * 3),
                     ),  # Bar ending point
                 ],
             )
