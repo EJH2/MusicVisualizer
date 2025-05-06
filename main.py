@@ -59,43 +59,55 @@ artist_font = pygame.font.SysFont("Bauhaus 93", 42)
 time_font = pygame.font.SysFont("Bauhaus 93", 24)
 SCREEN_WIDTH = 1920
 SCREEN_HEIGHT = 1080
+THUMBNAIL_SIZE = SCREEN_WIDTH // 6
+TIMELINE_HEIGHT = SCREEN_HEIGHT // 180
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 visualizer_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
 visualizer_surface_rect = visualizer_surface.get_rect()
+timeline_surface = pygame.Surface(
+    (SCREEN_WIDTH - THUMBNAIL_SIZE, TIMELINE_HEIGHT), pygame.SRCALPHA
+)
+timeline_surface_rect = timeline_surface.get_rect().move(
+    THUMBNAIL_SIZE * 0.5,
+    SCREEN_HEIGHT - (THUMBNAIL_SIZE * 0.42) - TIMELINE_HEIGHT,
+)
 background_entity = pygame.image.load(settings["background_path"])
 background_entity = pygame.transform.scale(
     background_entity, (SCREEN_WIDTH, SCREEN_HEIGHT)
 )
 background_rect = background_entity.get_rect()
 thumbnail_entity = pygame.image.load(settings["backup_thumb_path"])
-thumb_size = SCREEN_WIDTH // 6
-thumbnail_entity = pygame.transform.scale(thumbnail_entity, (thumb_size, thumb_size))
+thumbnail_entity = pygame.transform.scale(
+    thumbnail_entity, (THUMBNAIL_SIZE, THUMBNAIL_SIZE)
+)
 thumbnail_rect = thumbnail_entity.get_rect().move(
-    thumb_size * 0.5, SCREEN_HEIGHT - (thumb_size * 1.5)
+    THUMBNAIL_SIZE * 0.5, SCREEN_HEIGHT - (THUMBNAIL_SIZE * 1.5)
 )
 title_entity = title_font.render("Adjudicate", True, (255, 255, 255))
 title_rect = title_entity.get_rect().move(
-    thumb_size * 1.6, SCREEN_HEIGHT - (thumb_size * 0.65) - title_entity.get_height()
+    THUMBNAIL_SIZE * 1.6,
+    SCREEN_HEIGHT - (THUMBNAIL_SIZE * 0.65) - title_entity.get_height(),
 )
 artist_entity = artist_font.render("Borealising", True, (175, 175, 175))
 artist_rect = artist_entity.get_rect().move(
-    thumb_size * 1.6, SCREEN_HEIGHT - (thumb_size * 0.5) - artist_entity.get_height()
+    THUMBNAIL_SIZE * 1.6,
+    SCREEN_HEIGHT - (THUMBNAIL_SIZE * 0.5) - artist_entity.get_height(),
 )
 CURRENT_SONG_TIME = datetime.timedelta(0)
 current_time_entity = time_font.render(
     get_human_timestamp_from_timedelta(CURRENT_SONG_TIME), True, (255, 255, 255)
 )
 current_time_rect = current_time_entity.get_rect().move(
-    thumb_size * 0.5,
-    SCREEN_HEIGHT - (thumb_size * 0.3) - current_time_entity.get_height(),
+    THUMBNAIL_SIZE * 0.5,
+    SCREEN_HEIGHT - (THUMBNAIL_SIZE * 0.3) - current_time_entity.get_height(),
 )
 TOTAL_SONG_TIME = datetime.timedelta(0)
 total_time_entity = time_font.render(
     get_human_timestamp_from_timedelta(TOTAL_SONG_TIME), True, (255, 255, 255)
 )
 total_time_rect = total_time_entity.get_rect().move(
-    SCREEN_WIDTH - (thumb_size * 0.5),
-    SCREEN_HEIGHT - (thumb_size * 0.3) - total_time_entity.get_height(),
+    SCREEN_WIDTH - (THUMBNAIL_SIZE * 0.5) - total_time_entity.get_width(),
+    SCREEN_HEIGHT - (THUMBNAIL_SIZE * 0.3) - total_time_entity.get_height(),
 )
 
 # Try to set up API Manager
@@ -249,14 +261,14 @@ async def update_music_data(session):
         title, artists, thumbnail = await music_mgr.get_current_song()
         img = Image.open(thumbnail).convert("RGBA")
         thumbnail_entity = pygame.image.frombytes(
-            img.tobytes(), img.size, img.mode
+            img.tobytes(), img.size, "RGBA"
         ).convert()
     except KeyError:
         title, artists = await get_media_session_data(session)
         thumbnail_entity = pygame.image.load(settings["backup_thumb_path"])
 
     thumbnail_entity = pygame.transform.scale(
-        thumbnail_entity, (thumb_size, thumb_size)
+        thumbnail_entity, (THUMBNAIL_SIZE, THUMBNAIL_SIZE)
     )
     title_entity = title_font.render(title, True, (255, 255, 255))
     artist_entity = artist_font.render(", ".join(artists), True, (175, 175, 175))
@@ -299,6 +311,52 @@ def draw_timeline():
         get_human_timestamp_from_timedelta(TOTAL_SONG_TIME),
         True,
         (255, 255, 255),
+    )
+    timeline_surface.fill((0, 0, 0, 0))
+    pygame.draw.line(  # Draw back line
+        timeline_surface,
+        (100, 100, 100),
+        (TIMELINE_HEIGHT // 2, (TIMELINE_HEIGHT // 2) - 1),
+        (
+            timeline_surface.get_width() - (TIMELINE_HEIGHT // 2),
+            (TIMELINE_HEIGHT // 2) - 1,
+        ),
+        width=TIMELINE_HEIGHT,
+    )
+    pygame.draw.circle(  # Draw end circle
+        timeline_surface,
+        (100, 100, 100),
+        (timeline_surface.get_width() - (TIMELINE_HEIGHT // 2), (TIMELINE_HEIGHT // 2)),
+        radius=TIMELINE_HEIGHT // 2,
+    )
+    pygame.draw.circle(  # Draw near circle in white
+        timeline_surface,
+        (255, 255, 255),
+        (TIMELINE_HEIGHT // 2, TIMELINE_HEIGHT // 2),
+        radius=TIMELINE_HEIGHT // 2,
+    )
+    current_song_spacing = (
+        CURRENT_SONG_TIME.total_seconds() / TOTAL_SONG_TIME.total_seconds()
+    ) * (timeline_surface.get_width() - TIMELINE_HEIGHT)
+    # noinspection PyTypeChecker
+    pygame.draw.line(  # Draw current song line
+        timeline_surface,
+        (255, 255, 255),
+        ((TIMELINE_HEIGHT // 2 + 1), (TIMELINE_HEIGHT // 2) - 1),
+        (
+            max(
+                TIMELINE_HEIGHT // 2, current_song_spacing - (TIMELINE_HEIGHT // 2) + 1
+            ),
+            (TIMELINE_HEIGHT // 2) - 1,
+        ),
+        width=TIMELINE_HEIGHT,
+    )
+    # noinspection PyTypeChecker
+    pygame.draw.circle(  # Draw current tip circle
+        timeline_surface,
+        (255, 255, 255),
+        (max(TIMELINE_HEIGHT // 2, current_song_spacing), TIMELINE_HEIGHT // 2),
+        radius=TIMELINE_HEIGHT // 2,
     )
 
 
@@ -346,6 +404,7 @@ async def main():
                     screen.blit(thumbnail_entity, thumbnail_rect)
                     screen.blit(title_entity, title_rect)
                     screen.blit(artist_entity, artist_rect)
+                    screen.blit(timeline_surface, timeline_surface_rect)
                     screen.blit(current_time_entity, current_time_rect)
                     screen.blit(total_time_entity, total_time_rect)
                 except pygame.error:
