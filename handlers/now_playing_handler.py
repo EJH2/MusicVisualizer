@@ -94,7 +94,7 @@ def get_human_timestamp_from_timedelta(timedelta: datetime.timedelta) -> str:
     seconds = total_seconds % 60
     minutes = (total_seconds // 60) % 60
     hours = (total_seconds // 3600) % 24
-    return f"{f'{hours}:' if hours else ''}{minutes:02}:{seconds:02}"
+    return f"{f'{hours}:{minutes:02}' if hours else f'{minutes}'}:{seconds:02}"
 
 
 def get_media_timeline_data(
